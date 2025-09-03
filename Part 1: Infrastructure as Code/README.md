@@ -36,3 +36,49 @@ This Terraform setup provisions the following:
 
 ```bash
 terraform init
+```
+```bash
++-----------------------------------------------------+
+|                     VPC                             |
+|                                                     |
+|   +----------------+      +---------------------+   |
+|   |  Public Subnet |      |    Public Subnet    |   |
+|   | (AZ1)          |      | (AZ2)               |   |
+|   |                |      |                     |   |
+|   |  +---------+   |      |   +-------------+   |   |
+|   |  |  ALB    |<----HTTP/HTTPS---->| Bastion   |   |   <-- SSH access from Internet
+|   |  +---------+   |      |   +-------------+   |   |
+|   +-------|--------+      +---------|-----------+   |
+|           |                         |               |
+|           |                         |               |
+|           v                         v               |
+|                                                     |
+|   +------------------+     +---------------------+  |
+|   | Private Subnet   |     | Private Subnet      |  |
+|   | (AZ1)            |     | (AZ2)               |  |
+|   |                  |     |                     |  |
+|   | +--------------+ |     | +----------------+  |  |
+|   | | Auto Scaling | |<--->| | Auto Scaling   |  |  |  <-- EC2 instances (or ECS tasks)
+|   | | Group (EC2)  | |     | | Group (EC2)    |  |  |
+|   | +--------------+ |     | +----------------+  |  |
+|   |        |           \                      /     |
+|   |        v            \                    /      |
+|   |   +-------------+    \------------------/       |
+|   |   |   RDS       |                               |
+|   |   | PostgreSQL  |                               |
+|   |   +-------------+                               |
+|   +-------------------------------------------------+
+
++------------------------------------------------------+
+|                   Networking                         |
+|                                                      |
+| Internet <---> Internet Gateway <---> Public Subnets |
+| Public Subnets <--> NAT Gateway <---> Private Subnets|
++------------------------------------------------------+
+
+Security Groups:
+- ALB SG: Allow inbound HTTP/HTTPS from Internet
+- Bastion SG: Allow inbound SSH from Internet
+- EC2 SG: Allow inbound traffic only from ALB SG and SSH from Bastion SG
+- RDS SG: Allow inbound traffic only from EC2 SG
+```
